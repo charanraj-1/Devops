@@ -1,0 +1,22 @@
+---
+- name: Copy local script and run it with ansible on remote servers
+  hosts: all
+  become: true
+
+  tasks:
+    -name: copy the local script to servers
+      #use - /path/to/your/local_script.sh arg1 arg2
+      #if want to run script files with single command without copied. this will temperorily copies and runs, later deletes the scirpt on remote. args are optional.
+      #use ansible.builtin.copy if only needs to copied and used for later.
+      #use ansible.builtin.template if want to copy dynamic files that has spl characters
+       ansible.builtin.copy:
+       src:
+       dest: /root/home/
+       owner: root # Optional
+       group: root # Optional
+       mode: '0710'  # Optional
+
+     -name: Run the script to remote servers
+      shell: ./root/home/
+
+       
