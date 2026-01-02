@@ -1,0 +1,26 @@
+---
+- name: Install nginx and start
+  hosts: all 
+  become: root
+ 
+  tasks: 
+  - name: Install nginx
+    apt:
+      name: nginx
+      state: present
+  - name: start nginx
+    service:
+      name: nginx
+      state: started
+       
+- name: check the disk usage and memory capacity of all servers
+  hosts: all
+  become: root
+
+  tasks: 
+  - name: check disk usage
+    shell: df
+
+  - name: check memeory capacity
+    shell: free
+    state: latest
