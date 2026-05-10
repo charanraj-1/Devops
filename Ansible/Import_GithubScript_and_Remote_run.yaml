@@ -1,0 +1,29 @@
+---
+-name: Import a file or script from github and run
+ hosts: all
+ become: root
+
+ tasks:
+  - name: installing git
+    apt: git
+    state: present
+  - name: importing a script from git
+    shell: wget "https://raw.githubusercontent.com/charanraj-1/NewRepo/refs/heads/main/ServerHealthCheck.sh"
+    version: main
+    dest: "/root/home/"
+    mode: "0700"
+
+  - name: Run the script and save
+    shell: "./root/home/ServerHealthCheck.sh > /root/home/Script_result.log"
+    register: Script_output_ServerHealthcheck
+  
+  - name: Display script output to romote itself #here register will save the .stdout in memory for tem and debug - will show that content
+    ansible.builtin.debug:
+      var: Script_output_ServerHealthcheck.stdout
+
+  - name: Write result to a local file
+    ansible.builtin.copy:
+     content: "/root/home/Script_result.log"
+     dest: "/path/to/local/results/{{ inventory_hostname }}.log"
+    delegate_to: localhost
+    

@@ -1,0 +1,84 @@
+#--------------------------------------------------------------------------------#Create an S3 bukcet
+terraform 
+{
+	required_version=">=1.2.0"
+	required_providers
+	{
+	 aws ={
+	 	source = "hashicorp/aws"
+		version = "~>4.16"		
+		}
+	}
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#configure our AWS connection
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+provider "aws"
+{
+region="us-east-1"
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#Getting Aws account user info to give s3 a unique name
+#data → Terraform data source
+/*
+aws_caller_identity → AWS API that returns information about the current authenticated user
+current → local name you give to this data block
+This fetches information about the AWS account currently being used.
+*/
+data "aws_caller_identity" "current"{}
+
+locals 
+{
+account_id=data.aws_caller_identity.current.account_id
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+resource "aws_s3_bucket" "mystatefile_bucket"
+{
+bucket="${local.account_id}-terraform_states"
+versioning
+{
+enabled = true
+}
+#Enable server side scripting
+	server_side_encryption_configuration
+	{
+	rule
+	{
+	 apply_server_side_encryption_by_default
+	 {
+		sse_algorithm="AES256"
+	 }
+	}
+	}
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#create the dynamodb table
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+resource "aws_dynamodb_table" "Terraform_lock"
+{
+name="terraform_state_lock"
+hask_key="lock_id"
+billing_mode="pay_per_request"
+attribure{
+name="lock_id"
+type=S
+#here type means data type and s - string
+}
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#terraform s3 backend dynamodb
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+terraform{
+backend "s3"
+{
+bucket = "${local.account_id}-terraform_states"
+#name of the bukcet
+key = "/dev/app.tfstate"
+#key is where we want to store the .tfstate file in the s3
+#if we dont have any directory in s3 it will create but not .tf files
+region="us-east-1"
+encrypt="true"
+dynamodb_table="terraform_state_lock"
+}
+}
