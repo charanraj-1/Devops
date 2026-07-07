@@ -1,4 +1,4 @@
-resource "aws_eks_node_group" eks_node_group{
+resource "aws_eks_node_group" "eks_node_group"{
 	
 	cluster_name = aws_eks_cluster.my_eks.name
 	
@@ -18,6 +18,10 @@ resource "aws_eks_node_group" eks_node_group{
 
 	}
 
-	instace_type = "t3.medium"
+	instance_types = ["t3.micro"]
+	  depends_on = [
+    aws_iam_role_policy_attachment.worker_node_policy,
+    aws_iam_role_policy_attachment.cni_policy,
+    aws_iam_role_policy_attachment.ecr_policy]
 }
 
